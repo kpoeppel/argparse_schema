@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "argparse-schema"
+version = "0.1.0"
+description = "Bi-directional conversion between argparse and structured schemas (Dataclasses/YAML)"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = [
+    "omegaconf",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest",
+    "pytest-cov",
+    "ruff",
+]
+omegaconf = [
+    "omegaconf",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--cov=argparse_schema --cov-report=term-missing"
