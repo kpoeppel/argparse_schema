@@ -156,16 +156,27 @@ def _coerce_arguments(args: dict[str, Any], metadata: Mapping[str, ArgMetadata])
         if key not in metadata:
             continue
         arg_meta = metadata[key]
-        coerced[key] = _coerce_value(value, arg_meta.arg_type)
+        coerced[key] = _coerce_value(value, arg_meta.arg_type, arg_meta.element_type)
     return coerced
 
 
-def _coerce_value(value: Any, target_type: type | None) -> Any:
+def _coerce_value(value: Any, target_type: type | None, element_type: type | None = None) -> Any:
+    """Coerce ``value`` towards ``target_type``.
+
+    ``element_type`` matters for list arguments. argparse records a ``nargs``
+    argument as ``arg_type=list`` with the real per-element type alongside, and a
+    bare ``list`` carries no ``__args__`` -- so without it every element became a
+    STRING. That is not just a lost type: ``skip_defaults`` compares the coerced
+    value against the parser's default, so ``['1','2'] != [1,2]`` meant the
+    default of every nargs argument was emitted on every command line.
+    """
     if target_type is None or value is None:
         return value
     origin = getattr(target_type, "__origin__", target_type)
     if origin is list:
-        elem_type = target_type.__args__[0] if getattr(target_type, "__args__", None) else str
+        elem_type = element_type or (
+            target_type.__args__[0] if getattr(target_type, "__args__", None) else str
+        )
         if isinstance(value, str):
             value = value.split(",")
         if not isinstance(value, (list, tuple)):
@@ -208,6 +219,24 @@ def _action_type_name(action: argparse.Action) -> str:
     return "store"
 
 
+def _join_option(option: str, value: str) -> list[str]:
+    """Emit ``--opt value``, or ``--opt=value`` when the value looks like a flag.
+
+    argparse rejects ``["--tag", "-x"]``: a token starting with "-" is read as an
+    option, so the value is never consumed and the parser errors with "expected
+    one argument". The ``=`` form has no such ambiguity.
+
+    Applied to EVERY value starting with "-", including negative numbers, even
+    though argparse usually accepts those as two tokens. That leniency is
+    conditional -- it disappears the moment the parser owns an option string
+    that looks like a negative number -- so a rule that does not depend on the
+    parser's option table is the one that always round-trips.
+    """
+    if value.startswith("-"):
+        return [f"{option}={value}"]
+    return [option, value]
+
+
 def _spec_to_cmdline(
     spec: ActionSpec, argval: Any, skip_defaults: bool, list_sep: str | None = None
 ) -> list[str]:
@@ -238,14 +267,17 @@ def _spec_to_cmdline(
         values = _ensure_iterable(argval)
 
         if list_sep is not None:
-            return [option, list_sep.join(str(v) for v in values)]
+            return _join_option(option, list_sep.join(str(v) for v in values))
 
+        # NB only the first element can be protected this way: nargs consumes
+        # following tokens positionally, so `--opt=-a -b` still loses `-b`.
+        # argparse has no encoding for that, hence no attempt at one here.
         return [option, *[str(v) for v in values]]
 
     if skip_defaults and argval == spec.default:
         return []
 
-    return [option, str(argval)]
+    return _join_option(option, str(argval))
 
 
 def _ensure_iterable(value: Any) -> Iterable[Any]:
