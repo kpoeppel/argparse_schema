@@ -8,7 +8,7 @@ version = "0.1.0"
 description = "Bi-directional conversion between argparse and structured schemas (Dataclasses/YAML)"
 readme = "README.md"
 license = { text = "Apache-2.0" }
-requires-python = ">=3.9"
+requires-python = ">=3.10"
 dependencies = [
     "omegaconf",
 ]
@@ -29,3 +29,14 @@ where = ["src"]
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 addopts = "--cov=argparse_schema --cov-report=term-missing"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+ignore = ["E203"]
+
+[tool.docformatter]
+wrap-summaries = 88
+wrap-descriptions = 88

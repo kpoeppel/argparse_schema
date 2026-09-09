@@ -1,12 +1,13 @@
-"""Generation of Python dataclasses and YAML defaults from argparse
-metadata."""
+"""Generation of Python dataclasses and YAML defaults from argparse metadata."""
 
 from __future__ import annotations
 
+import ast
 import keyword
+from collections.abc import Mapping
+from enum import Enum
 from textwrap import wrap
 from typing import Any
-from collections.abc import Mapping
 
 from omegaconf import OmegaConf
 from .converter import ArgMetadata, ActionSpec
@@ -20,13 +21,54 @@ def _literal_token(value: Any) -> str:
     return repr(value)
 
 
+def _literal(value: Any, *, dest: str, field: str) -> str:
+    """Render ``value`` as a Python literal for the generated module.
+
+    ``repr`` is not enough on its own. An Enum reprs as ``<Mode.FAST: 'fast'>``,
+    which is not valid Python, so a module carrying one fails at IMPORT -- far
+    from the codegen call that produced it, and only for the callers whose
+    parser happens to use an enum.
+
+    An enum becomes its VALUE, because that is the token the command line
+    actually carries: ``type=Mode`` makes argparse call ``Mode(string)``, so
+    ``Mode.FAST`` reaches the CLI as ``fast``.
+
+    Anything else whose repr is not a literal raises here instead, naming the
+    argument. Emitting a file that cannot be imported is the one outcome worth
+    ruling out.
+    """
+    if isinstance(value, Enum):
+        value = value.value
+    text = repr(value)
+    try:
+        ast.literal_eval(text)
+    except (ValueError, SyntaxError):
+        raise ValueError(
+            f"cannot emit a literal for {dest}.{field}: {type(value).__name__} "
+            f"reprs as {text!r}, which is not valid Python. Give the argument a "
+            f"default the generated module can hold (a str, number, bool, None, "
+            f"or a list/dict of those)."
+        ) from None
+    return text
+
+
 def _type_name(value: Any, *, default: str = "None") -> str:
+    """Name a type for the generated module, which imports almost nothing.
+
+    Only builtins can be written bare. Any other class -- an Enum used as
+    ``type=``, a custom converter -- would emit a name the generated file never
+    imports, so it fails at IMPORT with a NameError rather than at codegen. Those
+    degrade to ``Any``, which the generated header always imports, and which is
+    what ``generate_dataclass`` already does for the same types.
+    """
     if value is None:
         return "None"
     if value is Any:
         return "Any"
     if isinstance(value, type):
-        return value.__name__
+        if getattr(value, "__module__", None) == "builtins":
+            return value.__name__
+        return "Any"
     return default
 
 
@@ -225,7 +267,7 @@ def generate_cli_metadata_code(
         metadata_lines.append(
             f"    {dest!r}: ArgMetadata(\n"
             f"        arg_type={_type_name(meta.arg_type)},\n"
-            f"        default={meta.default!r},\n"
+            f"        default={_literal(meta.default, dest=dest, field='default')},\n"
             f"        help={meta.help!r},\n"
             f"        choices={meta.choices!r},\n"
             f"        nargs={meta.nargs!r},\n"
@@ -243,8 +285,8 @@ def generate_cli_metadata_code(
             f"        option_strings={spec.option_strings!r},\n"
             f"        action_type={spec.action_type!r},\n"
             f"        nargs={spec.nargs!r},\n"
-            f"        const={spec.const!r},\n"
-            f"        default={spec.default!r}\n"
+            f"        const={_literal(spec.const, dest=dest, field='const')},\n"
+            f"        default={_literal(spec.default, dest=dest, field='default')}\n"
             "    ),"
         )
 
