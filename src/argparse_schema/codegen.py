@@ -203,8 +203,18 @@ def generate_cli_metadata_code(
     metadata: Mapping[str, ArgMetadata],
     specs: Mapping[str, ActionSpec],
     excluded: set[str] | None = None,
+    import_from: str = "argparse_schema",
 ) -> str:
-    """Generate Python code for CLI metadata and action specs."""
+    """Generate Python code for CLI metadata and action specs.
+
+    Args:
+        metadata: Argument metadata to emit.
+        specs: Action specs to emit.
+        excluded: Destinations to leave out of the generated module.
+        import_from: Module the generated file imports ``ArgMetadata`` and
+            ``ActionSpec`` from. Override it when this package is vendored
+            under another namespace, so the emitted import still resolves.
+    """
     excluded = excluded or set()
 
     metadata_lines = []
@@ -242,7 +252,7 @@ def generate_cli_metadata_code(
         '"""Auto-generated CLI metadata."""',
         "",
         "from typing import Any, Mapping",
-        "from oellm_autoexp.argparse_schema import ArgMetadata, ActionSpec",
+        f"from {import_from} import ArgMetadata, ActionSpec",
         "",
         "ARG_METADATA: Mapping[str, ArgMetadata] = {",
         *metadata_lines,
