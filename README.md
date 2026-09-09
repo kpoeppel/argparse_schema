@@ -81,3 +81,25 @@ Run the tests using `pytest`:
 ```bash
 PYTHONPATH=src pytest tests/
 ```
+
+## License and Attribution
+
+Copyright 2026 Korbinian Poeppel.
+
+Licensed under the Apache License, Version 2.0 (the "License"); you may not use
+these files except in compliance with the License. You may obtain a copy of the
+License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software distributed
+under the License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR
+CONDITIONS OF ANY KIND, either express or implied. See the [LICENSE](LICENSE)
+file for the specific language governing permissions and limitations under the
+License.
+
+This library is derived from `oellm_autoexp/argparse_schema` in
+[OpenEuroLLM/oellm-autoexp](https://github.com/OpenEuroLLM/oellm-autoexp),
+Copyright 2026 OpenEuroLLM Consortium, also licensed under Apache 2.0. It is
+maintained here as a standalone package and is periodically re-synced with
+upstream.

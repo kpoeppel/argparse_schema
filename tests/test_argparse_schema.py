@@ -151,6 +151,30 @@ def test_generate_cli_metadata_code(mock_parser):
     assert "'foo'" not in code
     assert "'bar'" in code
 
+    # The generated module imports from this package by default, so it is
+    # importable as-is; vendored copies can point it at their own namespace.
+    assert "from argparse_schema import ArgMetadata, ActionSpec" in code
+    vendored = generate_cli_metadata_code(metadata, specs, import_from="vendor.argparse_schema")
+    assert "from vendor.argparse_schema import ArgMetadata, ActionSpec" in vendored
+
+
+def test_generated_cli_metadata_code_executes(tmp_path):
+    """The emitted module must import and expose the two mappings."""
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--foo", type=int, default=1, help="a number")
+    parser.add_argument("--flag", action="store_true")
+    parser.add_argument("--items", nargs="+", type=str, default=["a"])
+    metadata = get_arg_metadata(parser)
+    specs = get_action_specs(parser)
+
+    module_path = tmp_path / "generated_cli_metadata.py"
+    module_path.write_text(generate_cli_metadata_code(metadata, specs))
+
+    namespace: dict = {}
+    exec(compile(module_path.read_text(), str(module_path), "exec"), namespace)
+    assert set(namespace["ARG_METADATA"]) == set(metadata)
+    assert set(namespace["ACTION_SPECS"]) == set(specs)
+
 
 def test_build_cmdline_args_list_sep(mock_parser):
     metadata = get_arg_metadata(mock_parser)
