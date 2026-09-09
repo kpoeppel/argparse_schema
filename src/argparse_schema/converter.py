@@ -1,5 +1,4 @@
-"""Utilities for bi-directional conversion between argparse and
-dictionaries/YAML."""
+"""Utilities for bi-directional conversion between argparse and dictionaries/YAML."""
 
 from __future__ import annotations
 

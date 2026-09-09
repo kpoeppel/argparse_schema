@@ -210,7 +210,11 @@ def test_build_cmdline_args_edge_cases(mock_parser):
 
     # List matching default
     metadata_ld = {"l": ArgMetadata(arg_type=list, default=["1"])}
-    specs_ld = {"l": ActionSpec(option_strings=("--l",), action_type="store", nargs="+", const=None, default=["1"])}
+    specs_ld = {
+        "l": ActionSpec(
+            option_strings=("--l",), action_type="store", nargs="+", const=None, default=["1"]
+        )
+    }
     assert build_cmdline_args({"l": ["1"]}, metadata_ld, specs_ld, skip_defaults=True) == []
 
     # Missing spec (but in metadata)
@@ -231,7 +235,9 @@ def test_build_cmdline_args_edge_cases(mock_parser):
     assert build_cmdline_args({"foo": 10}, metadata, specs, skip_defaults=True) == ["--foo", "10"]
 
     # Empty option strings
-    spec_empty = ActionSpec(option_strings=(), action_type="store", nargs=None, const=None, default=None)
+    spec_empty = ActionSpec(
+        option_strings=(), action_type="store", nargs=None, const=None, default=None
+    )
     assert _spec_to_cmdline(spec_empty, 1, False) == []
 
 

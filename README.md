@@ -21,9 +21,9 @@ A library for bi-directional conversion between `argparse.ArgumentParser` and st
 ```python
 import argparse
 from argparse_schema import (
-    get_arg_metadata, 
-    get_action_specs, 
-    extract_default_args, 
+    get_arg_metadata,
+    get_action_specs,
+    extract_default_args,
     build_cmdline_args
 )
 

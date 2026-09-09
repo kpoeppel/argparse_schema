@@ -188,8 +188,8 @@ class TestGeneratedCliMetadata:
     def test_enum_typed_argument_does_not_break_the_module(self, tmp_path):
         """An Enum reprs as ``<Mode.FAST: 'fast'>`` and names an unimportable type.
 
-        Both used to reach the generated file verbatim, so it failed at import --
-        far from the codegen call, and only for parsers that happen to use one.
+        Both used to reach the generated file verbatim, so it failed at import -- far
+        from the codegen call, and only for parsers that happen to use one.
         """
         p = argparse.ArgumentParser(allow_abbrev=False)
         p.add_argument("--mode", type=Mode, default=Mode.FAST)

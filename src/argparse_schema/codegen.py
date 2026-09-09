@@ -1,5 +1,4 @@
-"""Generation of Python dataclasses and YAML defaults from argparse
-metadata."""
+"""Generation of Python dataclasses and YAML defaults from argparse metadata."""
 
 from __future__ import annotations
 
